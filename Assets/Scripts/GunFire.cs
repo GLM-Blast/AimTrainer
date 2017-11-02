@@ -10,11 +10,25 @@ public class GunFire : MonoBehaviour {
     [SerializeField]
     Transform bulletSpawn;
 
+	[SerializeField] 
+	GameObject particles;
+
+	ParticleSystem hitParticles;
+
     public float bulletSpeed = 10.0f;
+
+	Animation gunFireAnim;
+
+
+	public AudioClip gunShotSound;
+	public float volume;
+
 
 	// Use this for initialization
 	void Start () {
-		
+
+		gunFireAnim = GetComponent<Animation>();
+
 	}
 	
 	// Update is called once per frame
@@ -28,11 +42,61 @@ public class GunFire : MonoBehaviour {
 	}
 
 
-    void Fire()
-    {
-        var bullet = (GameObject)Instantiate(_bullet, bulletSpawn.position, bulletSpawn.rotation);
-        bullet.GetComponent<Rigidbody>().velocity = bullet.transform.forward * bulletSpeed;
+	void Fire(){
+		GunShotSound();
+		gunFireAnim.Play();
 
-        Destroy(bullet, 3.0f);
-    }
+		RaycastHit hit;
+
+		Transform cam = Camera.main.transform;
+
+		if(Physics.Raycast(cam.position, transform.forward, out hit)){
+
+			if(hit.transform.tag != "Enemy"){
+				HitParticlesAnimate(hit.point);
+			}
+
+			if(hit.transform.tag == "Enemy"){
+				Debug.Log("Hit an enemy!");
+
+				Enemy enemy = hit.collider.GetComponent<Enemy>();
+
+				enemy.TakeDamage(5, hit.point);
+
+			}
+		}	
+	}
+
+
+	// -- -- -- ALLOWS GUNSHOT SOUNDS TO OVERLAP -- -- -- \\
+
+	void GunShotSound()
+	{
+		float timer = 0.0f;
+		timer = timer + Time.time;
+
+		AudioSource gunShot;
+
+		gunShot = gameObject.AddComponent<AudioSource>();
+		gunShot.clip = gunShotSound;
+		gunShot.volume = volume;
+		gunShot.Play();
+
+		Destroy(gunShot, 3.5f);
+
+	}
+
+
+
+	void HitParticlesAnimate(Vector3 hitPoint)
+	{
+		GameObject p = Instantiate(particles, hitPoint, Quaternion.identity)as GameObject;
+
+		hitParticles = p.GetComponent<ParticleSystem>();
+		hitParticles.Play();
+
+		Destroy(p, 1.0f);
+
+	}
+    
 }
